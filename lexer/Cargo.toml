@@ -1,0 +1,8 @@
+[package]
+name = "lexer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokens = { path = "../tokens" }
+lazy_static = "1.5.0"

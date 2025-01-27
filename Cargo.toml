@@ -1,0 +1,13 @@
+[workspace]
+members = [ "evaluator",
+    "lexer", "parser", "tokens",
+]
+
+[package]
+name='monkey'
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lexer = { path = "./lexer" }
+lazy_static = "1.5.0"

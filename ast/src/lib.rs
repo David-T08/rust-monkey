@@ -35,6 +35,12 @@ pub struct Identifier {
     pub value: String,
 }
 
+impl Identifier {
+    pub fn new(token: Token, value: String) -> Self {
+        Self { token, value }
+    }
+}
+
 impl ASTNode for Identifier {
     fn kind(&self) -> ASTNodeType {
         return ASTNodeType::Identifier;
@@ -52,6 +58,7 @@ impl fmt::Display for Identifier {
 }
 
 pub struct Expression {}
+
 impl ASTNode for Expression {
     fn kind(&self) -> ASTNodeType {
         return ASTNodeType::Expression;
@@ -69,6 +76,7 @@ impl fmt::Display for Expression {
 }
 
 pub struct Statement {}
+
 impl ASTNode for Statement {
     fn kind(&self) -> ASTNodeType {
         return ASTNodeType::Statement;
@@ -89,6 +97,12 @@ pub struct PostIncrementIdentifier {
     pub token: Token,
     pub value: String,
     pub operator: Token,
+}
+
+impl PostIncrementIdentifier {
+    pub fn new(token: Token, value: String, operator: Token) -> Self {
+        Self { token, value, operator }
+    }
 }
 
 impl ASTNode for PostIncrementIdentifier {
@@ -112,6 +126,12 @@ pub struct LetStatement {
     pub name: Identifier,
     pub value: Expression,
     pub constant: bool,
+}
+
+impl LetStatement {
+    pub fn new(token: Token, name: Identifier, value: Expression, constant: bool) -> Self {
+        Self { token, name, value, constant }
+    }
 }
 
 impl ASTNode for LetStatement {
@@ -141,6 +161,12 @@ pub struct ReturnStatement {
     pub return_value: Expression,
 }
 
+impl ReturnStatement {
+    pub fn new(token: Token, return_value: Expression) -> Self {
+        Self { token, return_value }
+    }
+}
+
 impl ASTNode for ReturnStatement {
     fn kind(&self) -> ASTNodeType {
         return ASTNodeType::ReturnStatement;
@@ -160,6 +186,12 @@ impl fmt::Display for ReturnStatement {
 pub struct ExpressionStatement {
     pub token: Token,
     pub expression: Expression,
+}
+
+impl ExpressionStatement {
+    pub fn new(token: Token, expression: Expression) -> Self {
+        Self { token, expression }
+    }
 }
 
 impl ASTNode for ExpressionStatement {
@@ -182,6 +214,12 @@ pub struct PrefixExpression {
     pub token: Token,
     pub operator: String,
     pub right: Expression,
+}
+
+impl PrefixExpression {
+    pub fn new(token: Token, operator: String, right: Expression) -> Self {
+        Self { token, operator, right }
+    }
 }
 
 impl ASTNode for PrefixExpression {
@@ -207,6 +245,12 @@ pub struct InfixExpression {
     pub left: Expression,
 }
 
+impl InfixExpression {
+    pub fn new(token: Token, operator: String, right: Expression, left: Expression) -> Self {
+        Self { token, operator, right, left }
+    }
+}
+
 impl ASTNode for InfixExpression {
     fn kind(&self) -> ASTNodeType {
         return ASTNodeType::InfixExpression;
@@ -226,6 +270,12 @@ impl fmt::Display for InfixExpression {
 pub struct IntegerLiteral {
     pub token: Token,
     pub value: i64,
+}
+
+impl IntegerLiteral {
+    pub fn new(token: Token, value: i64) -> Self {
+        Self { token, value }
+    }
 }
 
 impl ASTNode for IntegerLiteral {
@@ -249,6 +299,12 @@ pub struct BooleanLiteral {
     pub value: bool,
 }
 
+impl BooleanLiteral {
+    pub fn new(token: Token, value: bool) -> Self {
+        Self { token, value }
+    }
+}
+
 impl ASTNode for BooleanLiteral {
     fn kind(&self) -> ASTNodeType {
         return ASTNodeType::BooleanLiteral;
@@ -270,6 +326,12 @@ pub struct IfExpression {
     pub condition: Expression,
     pub consequence: BlockStatement,
     pub alternative: Option<BlockStatement>,
+}
+
+impl IfExpression {
+    pub fn new(token: Token, condition: Expression, consequence: BlockStatement, alternative: Option<BlockStatement>) -> Self {
+        Self { token, condition, consequence, alternative }
+    }
 }
 
 impl ASTNode for IfExpression {
@@ -302,6 +364,12 @@ pub struct BlockStatement {
     pub statements: Vec<Statement>,
 }
 
+impl BlockStatement {
+    pub fn new(token: Token, statements: Vec<Statement>) -> Self {
+        Self { token, statements }
+    }
+}
+
 impl ASTNode for BlockStatement {
     fn kind(&self) -> ASTNodeType {
         return ASTNodeType::BlockStatement;
@@ -330,6 +398,12 @@ pub struct FunctionLiteral {
     pub body: BlockStatement,
 }
 
+impl FunctionLiteral {
+    pub fn new(token: Token, parameters: Vec<Identifier>, body: BlockStatement) -> Self {
+        Self { token, parameters, body }
+    }
+}
+
 impl ASTNode for FunctionLiteral {
     fn kind(&self) -> ASTNodeType {
         return ASTNodeType::FunctionLiteral;
@@ -356,6 +430,12 @@ pub struct CallExpression {
     pub token: Token,
     pub function: Expression,
     pub arguments: Option<Vec<Expression>>,
+}
+
+impl CallExpression {
+    pub fn new(token: Token, function: Expression, arguments: Option<Vec<Expression>>) -> Self {
+        Self { token, function, arguments }
+    }
 }
 
 impl ASTNode for CallExpression {
@@ -387,6 +467,12 @@ pub struct StringLiteral {
     pub value: String,
 }
 
+impl StringLiteral {
+    pub fn new(token: Token, value: String) -> Self {
+        Self { token, value }
+    }
+}
+
 impl ASTNode for StringLiteral {
     fn kind(&self) -> ASTNodeType {
         return ASTNodeType::StringLiteral;
@@ -409,6 +495,12 @@ pub struct AssignmentStatement {
     pub value: Expression,
 }
 
+impl AssignmentStatement {
+    pub fn new(token: Token, name: Identifier, value: Expression) -> Self {
+        Self { token, name, value }
+    }
+}
+
 impl ASTNode for AssignmentStatement {
     fn kind(&self) -> ASTNodeType {
         return ASTNodeType::AssignmentStatement;
@@ -428,6 +520,12 @@ impl fmt::Display for AssignmentStatement {
 pub struct ArrayLiteral {
     pub token: Token,
     pub elements: Vec<Expression>,
+}
+
+impl ArrayLiteral {
+    pub fn new(token: Token, elements: Vec<Expression>) -> Self {
+        Self { token, elements }
+    }
 }
 
 impl ASTNode for ArrayLiteral {
@@ -458,6 +556,12 @@ pub struct IndexExpression {
     pub index: Expression,
 }
 
+impl IndexExpression {
+    pub fn new(token: Token, left: Expression, index: Expression) -> Self {
+        Self { token, left, index }
+    }
+}
+
 impl ASTNode for IndexExpression {
     fn kind(&self) -> ASTNodeType {
         return ASTNodeType::IndexExpression;
@@ -481,6 +585,12 @@ pub struct ArrayIndexExpression {
     pub value: Expression,
 }
 
+impl ArrayIndexExpression {
+    pub fn new(token: Token, array: Expression, index: Expression, value: Expression) -> Self {
+        Self { token, array, index, value }
+    }
+}
+
 impl ASTNode for ArrayIndexExpression {
     fn kind(&self) -> ASTNodeType {
         return ASTNodeType::ArrayIndexExpression;
@@ -500,6 +610,12 @@ impl fmt::Display for ArrayIndexExpression {
 pub struct HashLiteral {
     pub token: Token,
     pub pairs: HashMap<Expression, Expression>,
+}
+
+impl HashLiteral {
+    pub fn new(token: Token, pairs: HashMap<Expression, Expression>) -> Self {
+        Self { token, pairs }
+    }
 }
 
 impl ASTNode for HashLiteral {

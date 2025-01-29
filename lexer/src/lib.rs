@@ -27,8 +27,8 @@ lazy_static::lazy_static! {
 
 pub struct Lexer<'a> {
     input: &'a str,
-    position: usize,
-    read_position: usize,
+    pub position: usize,
+    pub read_position: usize,
     cur_char: char,
 }
 
@@ -36,10 +36,6 @@ impl<'a> Iterator for Lexer<'a> {
     type Item = Token<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.cur_char == '\0' {
-            return None;
-        }
-
         self.skip_whitespace();
 
         let token = if let Some(single_operator) = SINGLE_OPS.get(&self.cur_char) {
@@ -97,7 +93,7 @@ impl<'a> Lexer<'a> {
         };
 
         new.read_char(false);
-        new
+        return new
     }
 
     fn read_char(&mut self, peek: bool) -> char {
@@ -116,7 +112,7 @@ impl<'a> Lexer<'a> {
 
         self.position = self.read_position;
         self.read_position += self.cur_char.len_utf8();
-        self.cur_char
+        return self.cur_char
     }
 
     fn read_string(&mut self) -> &'a str {
@@ -140,6 +136,229 @@ impl<'a> Lexer<'a> {
             || self.cur_char == '\r'
         {
             self.read_char(false);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn it_can_do_basic_symbols() {
+        let input = "=+(){},;";
+        let mut lexer = Lexer::new(input);
+        let expects = vec![
+            Token::new(TokenType::Assign, "="),
+            Token::new(TokenType::Plus, "+"),
+            Token::new(TokenType::LParen, "("),
+            Token::new(TokenType::RParen, ")"),
+            Token::new(TokenType::LBrace, "{"),
+            Token::new(TokenType::RBrace, "}"),
+            Token::new(TokenType::Comma, ","),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Eof, "\0"),
+        ];
+        for expected in expects {
+            let tok = lexer.next().unwrap();
+												println!("{tok}, {}", lexer.position);
+						
+            // assert_eq!(tok, expected);
+        }
+    }
+    #[test]
+    fn it_can_do_a_basic_program() {
+        let input = r#"
+            let five = 5;
+            let ten = 10;
+            let add = fn(x, y) {
+                x + y;
+            };
+            let result = add(five, ten);
+        "#;
+        let expects = vec![
+            Token::new(TokenType::Let, "let"),
+            Token::new(TokenType::Ident, "five"),
+            Token::new(TokenType::Assign, "="),
+            Token::new(TokenType::Int, "5"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Let, "let"),
+            Token::new(TokenType::Ident, "ten"),
+            Token::new(TokenType::Assign, "="),
+            Token::new(TokenType::Int, "10"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Let, "let"),
+            Token::new(TokenType::Ident, "add"),
+            Token::new(TokenType::Assign, "="),
+            Token::new(TokenType::Function, "fn"),
+            Token::new(TokenType::LParen, "("),
+            Token::new(TokenType::Ident, "x"),
+            Token::new(TokenType::Comma, ","),
+            Token::new(TokenType::Ident, "y"),
+            Token::new(TokenType::RParen, ")"),
+            Token::new(TokenType::LBrace, "{"),
+            Token::new(TokenType::Ident, "x"),
+            Token::new(TokenType::Plus, "+"),
+            Token::new(TokenType::Ident, "y"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::RBrace, "}"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Let, "let"),
+            Token::new(TokenType::Ident, "result"),
+            Token::new(TokenType::Assign, "="),
+            Token::new(TokenType::Ident, "add"),
+            Token::new(TokenType::LParen, "("),
+            Token::new(TokenType::Ident, "five"),
+            Token::new(TokenType::Comma, ","),
+            Token::new(TokenType::Ident, "ten"),
+            Token::new(TokenType::RParen, ")"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Eof, "\0"),
+        ];
+        let mut lexer = Lexer::new(input);
+        for expected in expects {
+            let token = lexer.next().unwrap();
+            assert_eq!(token, expected);
+        }
+    }
+    #[test]
+    fn it_can_do_operators() {
+        let input = r#"
+            !-/*5;
+            5 < 10 > 5;
+        "#;
+        let expects = vec![
+            Token::new(TokenType::Bang, "!"),
+            Token::new(TokenType::Minus, "-"),
+            Token::new(TokenType::Div, "/"),
+            Token::new(TokenType::Mult, "*"),
+            Token::new(TokenType::Int, "5"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Int, "5"),
+            Token::new(TokenType::LessThan, "<"),
+            Token::new(TokenType::Int, "10"),
+            Token::new(TokenType::GreaterThan, ">"),
+            Token::new(TokenType::Int, "5"),
+            Token::new(TokenType::Semicolon, ";"),
+        ];
+        let mut lexer = Lexer::new(input);
+        for expected in expects {
+            let token = lexer.next().unwrap();
+            assert_eq!(token, expected);
+        }
+    }
+    #[test]
+    fn it_can_do_a_basic_if_statement() {
+        let input = r#"
+            if (5 < 10) {
+                return true;
+            } else {
+                return false;
+            }
+        "#;
+        let expects = vec![
+            Token::new(TokenType::If, "if"),
+            Token::new(TokenType::LParen, "("),
+            Token::new(TokenType::Int, "5"),
+            Token::new(TokenType::LessThan, "<"),
+            Token::new(TokenType::Int, "10"),
+            Token::new(TokenType::RParen, ")"),
+            Token::new(TokenType::LBrace, "{"),
+            Token::new(TokenType::Return, "return"),
+            Token::new(TokenType::True, "true"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::RBrace, "}"),
+            Token::new(TokenType::Else, "else"),
+            Token::new(TokenType::LBrace, "{"),
+            Token::new(TokenType::Return, "return"),
+            Token::new(TokenType::False, "false"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::RBrace, "}"),
+        ];
+        let mut lexer = Lexer::new(input);
+        for expected in expects {
+            let token = lexer.next().unwrap();
+            assert_eq!(token, expected);
+        }
+    }
+    #[test]
+    fn it_can_do_pre_increment_decrement_operators() {
+        let input = "x++; --x; x--; ++x";
+        let expects = vec![
+            Token::new(TokenType::Ident, "x"),
+            Token::new(TokenType::Increment, "++"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Decrement, "--"),
+            Token::new(TokenType::Ident, "x"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Ident, "x"),
+            Token::new(TokenType::Decrement, "--"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Increment, "++"),
+            Token::new(TokenType::Ident, "x"),
+        ];
+        let mut lexer = Lexer::new(input);
+        for expected in expects {
+            let token = lexer.next().unwrap();
+            assert_eq!(token, expected);
+        }
+    }
+    #[test]
+    fn it_can_fully_lex() {
+        let input = r#"
+            10 == 10;
+            10 != 9;
+            "foobar"
+            " foo  bar"
+            "I have nested quotes! \"omggg\""
+            [1, 2];
+            {"foo": "bar", "test": 1}
+            {1: 2};
+            let const x = 5
+        "#;
+        let expects = vec![
+            Token::new(TokenType::Int, "10"),
+            Token::new(TokenType::Eq, "=="),
+            Token::new(TokenType::Int, "10"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Int, "10"),
+            Token::new(TokenType::NotEq, "!="),
+            Token::new(TokenType::Int, "9"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::String, "foobar"),
+            Token::new(TokenType::String, " foo  bar"),
+            Token::new(TokenType::String, r#"I have nested quotes! "omggg""#),
+            Token::new(TokenType::LBracket, "["),
+            Token::new(TokenType::Int, "1"),
+            Token::new(TokenType::Comma, ","),
+            Token::new(TokenType::Int, "2"),
+            Token::new(TokenType::RBracket, "]"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::LBrace, "{"),
+            Token::new(TokenType::String, "foo"),
+            Token::new(TokenType::Colon, ":"),
+            Token::new(TokenType::String, "bar"),
+            Token::new(TokenType::Comma, ","),
+            Token::new(TokenType::String, "test"),
+            Token::new(TokenType::Colon, ":"),
+            Token::new(TokenType::Int, "1"),
+            Token::new(TokenType::RBrace, "}"),
+            Token::new(TokenType::LBrace, "{"),
+            Token::new(TokenType::Int, "1"),
+            Token::new(TokenType::Colon, ":"),
+            Token::new(TokenType::Int, "2"),
+            Token::new(TokenType::RBrace, "}"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Let, "let"),
+            Token::new(TokenType::Constant, "const"),
+            Token::new(TokenType::Ident, "x"),
+            Token::new(TokenType::Assign, "="),
+            Token::new(TokenType::Int, "5"),
+            Token::new(TokenType::Eof, "\0"),
+        ];
+        let mut lexer = Lexer::new(input);
+        for expected in expects {
+            let token = lexer.next().unwrap();
+            assert_eq!(token, expected);
         }
     }
 }

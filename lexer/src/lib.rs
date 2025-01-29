@@ -64,33 +64,21 @@ impl<'a> Iterator for Lexer<'a> {
             Token::new(TokenType::Eof, "\0")
         } else if self.cur_char == '\'' || self.cur_char == '\"' {
             Token::new(TokenType::String, self.read_string())
-        } else if self.cur_char.is_alphabetic() || self.cur_char.is_digit(10) {
-            let alphabetic = self.cur_char.is_alphabetic();
-            let literal = {
-                let tok_type: &str = "iden";
-                let start = self.position;
+        } else if self.cur_char.is_alphabetic() {
+            let start = self.position;
 
-                match tok_type {
-                    "num" => {
-                        while self.cur_char.is_digit(10) {
-                            self.read_char(false);
-                        }
-                    }
-                    "iden" => {
-                        while (&mut *self).cur_char.is_alphabetic() {
-                            (&mut *self).read_char(false);
-                        }
-                    }
-                    _ => panic!("Invalid token type {}, expected num or iden", tok_type),
-                }
-
-                &(&mut *self).input[start..(&mut *self).position]
-            };
-            if alphabetic {
-                Token::new(lookup_keyword(literal), literal)
-            } else {
-                Token::new(TokenType::Int, literal)
+            while self.cur_char.is_alphabetic() {
+                self.read_char(false);
             }
+
+            let literal = &self.input[start..self.position];
+            Token::new(lookup_keyword(literal), literal)
+        } else if self.cur_char.is_digit(10) {
+            let start = self.position;
+            while self.cur_char.is_digit(10) {
+                self.read_char(false);
+            }
+            Token::new(TokenType::Int, &self.input[start..self.position])
         } else {
             Token::new(TokenType::Illegal, "?")
         };

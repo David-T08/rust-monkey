@@ -13,7 +13,7 @@ fn main() {
 						process::exit(0);
 				}
 
-				let lexer = Lexer::new(input.to_string());
+				let lexer = Lexer::new(input);
 				for token in lexer {
 					println!("{:?}", token);
 				}

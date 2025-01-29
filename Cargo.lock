@@ -3,8 +3,11 @@
 version = 4
 
 [[package]]
-name = "evaluator"
+name = "ast"
 version = "0.1.0"
+dependencies = [
+ "tokens",
+]
 
 [[package]]
 name = "lazy_static"
@@ -31,6 +34,11 @@ dependencies = [
 [[package]]
 name = "parser"
 version = "0.1.0"
+dependencies = [
+ "ast",
+ "lexer",
+ "tokens",
+]
 
 [[package]]
 name = "tokens"

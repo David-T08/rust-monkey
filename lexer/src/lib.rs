@@ -25,27 +25,70 @@ lazy_static::lazy_static! {
     };
 }
 
-pub struct Lexer {
-    input: String,
+pub struct Lexer<'a> {
+    input: &'a str,
     position: usize,
     read_position: usize,
     cur_char: char,
 }
 
-impl Iterator for Lexer {
-    type Item = Token<'a>; // Error ere
+impl<'a> Iterator for Lexer<'a> {
+    type Item = Token<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.cur_char == '\0' {
-            None
-        } else {
-            Some(self.next_token())
+            return None;
         }
+
+        self.skip_whitespace();
+
+        let token = if let Some(single_operator) = SINGLE_OPS.get(&self.cur_char) {
+            let peeked = self.read_char(true);
+
+            if self.cur_char == '=' && peeked == '=' {
+                self.read_char(false);
+                Token::new(TokenType::Eq, "==")
+            } else if self.cur_char == '!' && peeked == '=' {
+                self.read_char(false);
+                Token::new(TokenType::NotEq, "!=")
+            } else if self.cur_char == '+' && peeked == '+' {
+                self.read_char(false);
+                Token::new(TokenType::Increment, "++")
+            } else if self.cur_char == '-' && peeked == '-' {
+                self.read_char(false);
+                Token::new(TokenType::Decrement, "--")
+            } else {
+                single_operator.clone()
+            }
+        } else if self.cur_char == '\0' {
+            Token::new(TokenType::Eof, "\0")
+        } else if self.cur_char == '\'' || self.cur_char == '\"' {
+            Token::new(TokenType::String, self.read_string())
+        } else if self.cur_char.is_alphabetic() {
+            let start = self.position;
+
+            while self.cur_char.is_alphabetic() {
+                self.read_char(false);
+            }
+
+            let literal = &self.input[start..self.position];
+            Token::new(lookup_keyword(literal), literal)
+        } else if self.cur_char.is_digit(10) {
+            let start = self.position;
+            while self.cur_char.is_digit(10) {
+                self.read_char(false);
+            }
+            Token::new(TokenType::Int, &self.input[start..self.position])
+        } else {
+            Token::new(TokenType::Illegal, "?")
+        };
+
+        Some(token)
     }
 }
 
-impl Lexer {
-    pub fn new(input: String) -> Lexer {
+impl<'a> Lexer<'a> {
+    pub fn new(input: &'a str) -> Lexer<'a> {
         let mut new = Lexer {
             input,
             position: 0,
@@ -76,27 +119,7 @@ impl Lexer {
         self.cur_char
     }
 
-    fn read_iden_or_num(&mut self, tok_type: &str) -> &str {
-				let start = self.position;
-
-        match tok_type {
-            "num" => {
-                while self.cur_char.is_digit(10) {
-                    self.read_char(false);
-                }
-            }
-            "iden" => {
-                while self.cur_char.is_alphabetic() {
-                    self.read_char(false);
-                }
-            }
-            _ => panic!("Invalid token type {}, expected num or iden", tok_type),
-        }
-
-        return &self.input[start..self.position];
-    }
-
-    fn read_string(&mut self) -> &str {
+    fn read_string(&mut self) -> &'a str {
         let start = self.position + 1;
 
         loop {
@@ -108,42 +131,6 @@ impl Lexer {
         }
 
         return &self.input[start..self.position];
-    }
-
-    pub fn next_token(&mut self) -> Token {
-        self.skip_whitespace();
-
-        if let Some(single_operator) = SINGLE_OPS.get(&self.cur_char) {
-            let peeked = self.read_char(true);
-
-            if self.cur_char == '=' && peeked == '=' {
-                self.read_char(false);
-                return Token::new(TokenType::Eq, "==");
-            } else if self.cur_char == '!' && peeked == '=' {
-                self.read_char(false);
-                return Token::new(TokenType::NotEq, "!=");
-            } else if self.cur_char == '+' && peeked == '+' {
-                self.read_char(false);
-                return Token::new(TokenType::Increment, "++");
-            } else if self.cur_char == '-' && peeked == '-' {
-                self.read_char(false);
-                return Token::new(TokenType::Decrement, "--");
-            } else {
-                return single_operator.clone();
-            }
-        } else if self.cur_char == '\0' {
-            return Token::new(TokenType::Eof, "\0");
-        } else if self.cur_char == '\'' || self.cur_char == '\"' {
-            return Token::new(TokenType::String, self.read_string());
-        } else if self.cur_char.is_alphabetic() {
-            let literal = self.read_iden_or_num("iden");
-            return Token::new(lookup_keyword(literal), literal);
-        } else if self.cur_char.is_digit(10) {
-            let literal = self.read_iden_or_num("num");
-            return Token::new(TokenType::Int, literal);
-        } else {
-            return Token::new(TokenType::Illegal, "?")//&self.cur_char.to_string()[..]); // Error here
-        }
     }
 
     fn skip_whitespace(&mut self) {
